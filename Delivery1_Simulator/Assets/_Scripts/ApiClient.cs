@@ -50,7 +50,6 @@ public class ApiClient : MonoBehaviour
                         onSuccess?.Invoke((uint)response.id);
                         yield break;
                     }
-                    // Error de datos (rechazado por el servidor): reintentar no arregla nada
                     Debug.LogError($"[ApiClient] {endpoint} rejected: {request.downloadHandler.text}");
                     yield break;
                 }
