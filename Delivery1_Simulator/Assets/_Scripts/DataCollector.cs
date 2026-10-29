@@ -4,15 +4,6 @@ using System.Globalization;
 using System.Text;
 using UnityEngine;
 
-/// <summary>
-/// Puente entre el Simulator y el destino de los datos:
-///  1. Escucha los eventos del Simulator (nuevo jugador, sesión, compra...).
-///  2. Los entrega al destino elegido en "Mode":
-///       - Console: los imprime en la consola de Unity (IDs inventados en local).
-///       - Server : los envía por HTTP mediante ApiClient (IDs los da el servidor).
-///  3. Avisa al Simulator con CallbackEvents para que continúe la simulación.
-/// Poner este componente en el mismo GameObject que el Simulator.
-/// </summary>
 public class DataCollector : MonoBehaviour
 {
     public enum OutputMode { Console, Server }
@@ -23,17 +14,13 @@ public class DataCollector : MonoBehaviour
 
     private const string DateFormat = "yyyy-MM-dd HH:mm:ss";
 
-    // El Simulator entrega el género como float 0..1; aquí decidimos cómo se traduce.
-    private const float MaleThreshold = 0.45f;   // [0, 0.45)    -> M
-    private const float FemaleThreshold = 0.90f; // [0.45, 0.90) -> F, resto -> O
+    private const float MaleThreshold = 0.45f;
+    private const float FemaleThreshold = 0.90f;
 
     private ApiClient _api;
 
-    // El Simulator, al cerrar una sesión, espera que le devolvamos el playerId.
     private readonly Dictionary<uint, uint> _sessionToPlayer = new Dictionary<uint, uint>();
 
-    // Solo modo Console: contadores de IDs y cola de respuestas pendientes.
-    // La cola evita llamadas recursivas gigantes (el Simulator encadena eventos).
     private readonly Dictionary<string, uint> _localIds = new Dictionary<string, uint>();
     private readonly Queue<Action> _pendingReplies = new Queue<Action>();
 
@@ -63,7 +50,6 @@ public class DataCollector : MonoBehaviour
         Simulator.OnBuyItem -= HandleBuyItem;
     }
 
-    // Modo Console: devuelve las respuestas al Simulator poco a poco, sin recursión.
     private void Update()
     {
         int processed = 0;
@@ -124,7 +110,7 @@ public class DataCollector : MonoBehaviour
         Send("end_session.php", fields, _ =>
         {
             uint playerId = _sessionToPlayer[sessionId];
-            _sessionToPlayer.Remove(sessionId); // evita que el diccionario crezca sin límite
+            _sessionToPlayer.Remove(sessionId);
             CallbackEvents.OnEndSessionCallback?.Invoke(playerId);
         });
     }
@@ -133,7 +119,6 @@ public class DataCollector : MonoBehaviour
 
     #region Output (Console / Server)
 
-    /// <summary>Entrega un evento al destino elegido y, cuando hay id, llama a onId.</summary>
     private void Send(string endpoint, Dictionary<string, string> fields, Action<uint> onId)
     {
         if (mode == OutputMode.Server)
@@ -142,7 +127,6 @@ public class DataCollector : MonoBehaviour
             return;
         }
 
-        // Modo Console: id local + imprimir + responder en el siguiente Update
         uint id = NextLocalId(endpoint);
         Debug.Log(FormatLog(endpoint, id, fields));
         _pendingReplies.Enqueue(() => onId(id));

@@ -4,14 +4,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-/// <summary>
-/// Responsabilidad única: enviar peticiones POST al servidor de forma ASÍNCRONA
-/// (corrutinas + UnityWebRequest, nunca bloquea el hilo principal) y devolver el id
-/// que responde el servidor. No sabe nada del juego ni del simulador.
-/// </summary>
 public class ApiClient : MonoBehaviour
 {
-    [SerializeField] private string baseUrl = "http://localhost/game/";
+    [SerializeField] private string baseUrl = "https://citmalumnes.upc.es/~marcbp11/";
     [SerializeField] private int maxRetries = 5;
     [SerializeField] private float retryDelaySeconds = 1f;
     [SerializeField] private int timeoutSeconds = 10;
@@ -23,7 +18,6 @@ public class ApiClient : MonoBehaviour
         public string error;
     }
 
-    /// <summary>Envía el POST y, si va bien, llama a onSuccess con el id devuelto.</summary>
     public void Post(string endpoint, Dictionary<string, string> fields, Action<uint> onSuccess)
     {
         StartCoroutine(PostRoutine(endpoint, fields, onSuccess));
